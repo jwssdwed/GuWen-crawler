@@ -45,7 +45,7 @@ class Crawler(object):
                     if re.match(r'.*doseek2\((10,.*,.*)\);.*', anchor): # doseek2(10, .*, .*) stands for a author possessing one/some poetry in this website.
                         author = re.search(r'(?<=\);">)[^\…]+', anchor).group(0)
                         seek_type, value, pageno = re.search(r'(?<=onclick="doseek2\()[^\)]+', anchor).group(0).split(',')
-                        desc = self.get_author_info(seek_type, 1, value)   # Pageno should always be 1
+                        desc = self.get_author_info(seek_type, value, 1)   # Pageno should always be 1
                         with scopedsession() as session:
                             # Add every author to DB because adding a batch of keys may have some primary keys exist in the table, 
                             # and it will trigger rollback w/o adding the non-existing new keys.
@@ -57,7 +57,7 @@ class Crawler(object):
                             )
 
 
-    def get_author_info(self, seek_type, pageno, value) -> str:
+    def get_author_info(self, seek_type, value, pageno) -> str:
         """
         Author info are in doseek2(10, x, y), and a author's corresponding doseek2 func value could be retrived
         from the given author list page.
@@ -78,7 +78,7 @@ class Crawler(object):
                 desc = re.sub('[\<br\>|\<\/br\>|\<front\>|\<\/front>|\<b\>|\<\/b\>]', '', desc) # Remove extral tags.
                 return desc
 
-    def get_ci_list(self, seek_type=2, pageno=1, value=""):
+    def get_ci_list(self, seek_type=2, value="", pageno=1):
         """
 
         """
