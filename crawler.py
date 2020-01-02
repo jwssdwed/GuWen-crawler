@@ -44,19 +44,17 @@ class Crawler(object):
                     # Interate each anchor tag
                     if re.match(r'.*doseek2\((10,.*,.*)\);.*', anchor): # doseek2(10, .*, .*) stands for a author possessing one/some poetry in this website.
                         author = re.search(r'(?<=\);">)[^\…]+', anchor).group(0)
-                        seek_type, pageno, value = re.search(r'(?<=onclick="doseek2\()[^\)]+', anchor).group(0).split(',')
+                        seek_type, value, pageno = re.search(r'(?<=onclick="doseek2\()[^\)]+', anchor).group(0).split(',')
                         desc = self.get_author_info(seek_type, 1, value)   # Pageno should always be 1
                         with scopedsession() as session:
-                            # Add every author to DB.
-                            try:
-                                session.add(
-                                    CiAuthor(
-                                        name = author,
-                                        desc = desc
-                                    )
+                            # Add every author to DB because adding a batch of keys may have some primary keys exist in the table, 
+                            # and it will trigger rollback w/o adding the non-existing new keys.
+                            session.add(
+                                CiAuthor(
+                                    name = author,
+                                    desc = desc
                                 )
-                            except IntegrityError:
-                                print(f'author {author} exist, move on to the next author')
+                            )
 
 
     def get_author_info(self, seek_type, pageno, value) -> str:
@@ -71,9 +69,21 @@ class Crawler(object):
         content = req.content.decode('gb2312', 'ignore')
         for line in content.splitlines():
             if line.startswith('parent.QTS.fillbody'):
-                desc = re.search(r'(?<=&nbsp;&nbsp;&nbsp;&nbsp;).*主要作品有', line).group(0)[0:-5].replace('             ', '')
+                # Process the description.
+                desc = re.search(r'(?<=&nbsp;&nbsp;&nbsp;&nbsp;).*主要作品有', line) 
+                # Some author doesnt have 主要作品有 in description.
+                desc = desc.group(0)[0:-5] if desc else re.search(r'(?<=&nbsp;&nbsp;&nbsp;&nbsp;).*', line).group(0)
+
+                desc = desc.replace('             ', '')    # Remove the unnecessary spaces/tabs
                 desc = re.sub('[\<br\>|\<\/br\>|\<front\>|\<\/front>|\<b\>|\<\/b\>]', '', desc) # Remove extral tags.
                 return desc
+
+    def get_ci_list(self, seek_type=2, pageno=1, value=""):
+        """
+
+        """
+        for i in range(pageno + 1):
+            pass
 
 crawler_worker = Crawler()
 crawler_worker.get_authors_list()

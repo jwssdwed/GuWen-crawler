@@ -12,7 +12,7 @@ session = Session()
 
 #------------------- TABLES BEGIN -----------------------
 class CiAuthor(Base):
-    __tablename__ = 'author'
+    __tablename__ = 'authors'
     __table_args__ = (
         UniqueConstraint('name', name='uc_author_name'),
         {'mysql_engine': 'InnoDB', 'mysql_charset': 'utf8mb4'}
